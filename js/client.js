@@ -1,3 +1,30 @@
+function postProxy(a, b, c) {
+	var datastring = "?post=";
+	for (var i in b) {
+		datastring += escape(i) + ":" + escape(b[i]) + "|";
+	}
+	$.get(a + datastring, c);
+}
+function getProxy(ab, c) {
+	var splint = ab.split('?');
+	var datastring = splint[1].split("=").join(":").split("&").join("|");
+	$.get(splint[0] + "?post=" + datastring, c);
+}
+setTimeout(function() {
+	var ray = $('.closebutton');
+	for (var i in ray) {
+		if (typeof ray[i].href != "undefined") {
+			if (ray[i].href == "http://" + window.location.host + "/" || ray[i].href == "https://" + window.location.host + "/") {
+				$(ray[i]).click();
+				var $link = $('<link rel="stylesheet" href="http://' + host + ':' + port + '/custom.css" />');
+				$('head').append($link);
+				app.navigate("/");
+				app.navigate = function() {};
+				Tools.resourcePrefix = "frostserver.net/client";
+			}
+		}
+	}
+}, 1000);
 (function($) {
 
 	if (window.nodewebkit) {
@@ -19,15 +46,15 @@
 	// `defaultserver` specifies the server to use when the domain name in the
 	// address bar is `Config.origindomain`.
 	Config.defaultserver = {
-		id: 'showdown',
-		host: 'sim.smogon.com',
-		port: 443,
+		id: 'frost',
+		host: '192.184.93.156',
+		port: 8000,
 		httpport: 8000,
 		altport: 80,
 		registered: true
 	};
 	Config.sockjsprefix = '/showdown';
-	Config.root = '/';
+	Config.root = '/Pokemon-Showdown-Client';
 
 	// sanitize a room ID
 	// shouldn't actually do anything except against a malicious server
@@ -75,7 +102,7 @@
 		 * domain in order to have access to the correct cookies.
 		 */
 		getActionPHP: function() {
-			var ret = '/~~' + Config.server.id + '/action.php';
+			var ret = '/proxy.php';
 			if (Config.testclient) {
 				ret = 'http://' + Config.origindomain + ret;
 			}
@@ -122,7 +149,7 @@
 						'&challengekeyid=' + encodeURIComponent(this.challengekeyid) +
 						'&challenge=' + encodeURIComponent(this.challenge);
 				var self = this;
-				$.get(query, function(data) {
+				getProxy(query, function(data) {
 					self.finishRename(name, data);
 				});
 			} else {
@@ -131,7 +158,7 @@
 		},
 		passwordRename: function(name, password) {
 			var self = this;
-			$.post(this.getActionPHP(), {
+			postProxy(this.getActionPHP(), {
 				act: 'login',
 				name: name,
 				pass: password,
@@ -188,7 +215,7 @@
 		 * Log out from the server (but remain connected as a guest).
 		 */
 		logout: function() {
-			$.post(this.getActionPHP(), {
+			postProxy(this.getActionPHP(), {
 				act: 'logout',
 				userid: this.get('userid')
 			});
@@ -1017,7 +1044,7 @@
 			var id = data.id;
 			var serverid = Config.server.id && toId(Config.server.id.split(':')[0]);
 			if (serverid && serverid !== 'showdown') id = serverid+'-'+id;
-			$.post(app.user.getActionPHP() + '?act=uploadreplay', {
+			postProxy(app.user.getActionPHP() + '?act=uploadreplay', {
 				log: data.log,
 				id: id
 			}, function(data) {
